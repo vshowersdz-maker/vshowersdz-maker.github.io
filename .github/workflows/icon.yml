@@ -1,0 +1,29 @@
+name: icon-links
+on:
+  push:
+    branches: [main]
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Insert apple-touch-icon if missing
+        run: |
+          f="Waypoint .html"
+          if [ -f "$f" ] && ! grep -q apple-touch-icon "$f"; then
+            python3 - <<'PY'
+from pathlib import Path
+p = Path("Waypoint .html")
+t = p.read_text()
+ins = '''  <link rel="apple-touch-icon" href="apple-touch-icon.svg" />\n  <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2708.png" />\n'''
+t = t.replace("<title>Waypoint — Your routes</title>", ins + "  <title>Waypoint — Your routes</title>", 1)
+p.write_text(t)
+PY
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git add "$f"
+            git commit -m "Add airplane icon to app page"
+            git push
+          fi
